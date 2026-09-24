@@ -100,13 +100,14 @@ int findEntry(Entry* dict, int size, int prefix, char c) {
     return -1;
 }
 
-void compressLZ78(const char* input) {
+void compressLZ78(const char* input, Entry*& salida, int& salidaSize) {
     Entry* dict = new Entry[1000];
     int dictSize = 1;
 
-    int currentPrefix = 0;
+    salida = new Entry[1000];
+    salidaSize = 0;
 
-    cout << "Salida (indice, caracter):" << endl;
+    int currentPrefix = 0;
 
     for (int i = 0; input[i] != '\0'; i++) {
         char c = input[i];
@@ -117,20 +118,75 @@ void compressLZ78(const char* input) {
             currentPrefix = index;
         }
         else {
-            cout << "(" << currentPrefix << ", " << c << ")" << endl;
+            salida[salidaSize].prefix = currentPrefix;
+            salida[salidaSize].c = c;
+            salidaSize++;
 
             dict[dictSize].prefix = currentPrefix;
             dict[dictSize].c = c;
-
             dictSize++;
+
             currentPrefix = 0;
         }
     }
 
-    // Si al terminar queda una frase encontrada pero no impresa.
     if (currentPrefix != 0) {
-        cout << "(" << currentPrefix << ", FIN)" << endl;
+        salida[salidaSize].prefix = currentPrefix;
+        salida[salidaSize].c = '\0';
+        salidaSize++;
     }
+
+    delete[] dict;
+}
+
+
+void decompressLZ78(Entry* entrada, int entradaSize,
+                    char*& texto, int& longitudTexto) {
+    Entry* dict = new Entry[1000];
+    int dictSize = 1;
+
+    texto = new char[10000];
+    longitudTexto = 0;
+
+    for (int i = 0; i < entradaSize; i++) {
+        int prefijo = entrada[i].prefix;
+        char caracter = entrada[i].c;
+
+        char temporal[1000];
+        int cantidad = 0;
+
+        int indice = prefijo;
+
+        // Reconstruye la frase del prefijo,
+        // pero los caracteres quedan al revés.
+        while (indice != 0) {
+            temporal[cantidad] = dict[indice].c;
+            cantidad++;
+
+            indice = dict[indice].prefix;
+        }
+
+        // Copia la frase en el orden correcto al texto final.
+        for (int j = cantidad - 1; j >= 0; j--) {
+            texto[longitudTexto] = temporal[j];
+            longitudTexto++;
+        }
+
+        // Agrega el último carácter del par.
+        // Si es '\0', representa FIN y no se agrega nada.
+        if (caracter != '\0') {
+            texto[longitudTexto] = caracter;
+            longitudTexto++;
+
+            // Se agrega el mismo par al diccionario,
+            // igual que se hizo durante la compresión.
+            dict[dictSize].prefix = prefijo;
+            dict[dictSize].c = caracter;
+            dictSize++;
+        }
+    }
+
+    texto[longitudTexto] = '\0';
 
     delete[] dict;
 }
@@ -180,10 +236,25 @@ int main() {
 
     char texto[] = "ABAABABA";
 
-    cout << "Texto original: " << texto << endl;
-    cout << endl;
+    Entry* comprimido;
+    int cantidadPares;
 
-    compressLZ78(texto);
+    char* reconstruido;
+    int longitudReconstruido;
 
+    compressLZ78(texto, comprimido, cantidadPares);
+
+    decompressLZ78(
+        comprimido,
+        cantidadPares,
+        reconstruido,
+        longitudReconstruido
+        );
+
+    cout << "Original:      " << texto << endl;
+    cout << "Reconstruido:  " << reconstruido << endl;
+
+    delete[] comprimido;
+    delete[] reconstruido;
     return 0;
 }
