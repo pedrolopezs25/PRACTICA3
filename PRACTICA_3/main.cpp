@@ -85,6 +85,56 @@ string descomprimirRLE(string comprimido) {
     return descomprimido;
 }
 
+struct Entry {
+    int prefix;
+    char c;
+};
+
+int findEntry(Entry* dict, int size, int prefix, char c) {
+    for (int i = 1; i < size; i++) {
+        if (dict[i].prefix == prefix && dict[i].c == c) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+void compressLZ78(const char* input) {
+    Entry* dict = new Entry[1000];
+    int dictSize = 1;
+
+    int currentPrefix = 0;
+
+    cout << "Salida (indice, caracter):" << endl;
+
+    for (int i = 0; input[i] != '\0'; i++) {
+        char c = input[i];
+
+        int index = findEntry(dict, dictSize, currentPrefix, c);
+
+        if (index != -1) {
+            currentPrefix = index;
+        }
+        else {
+            cout << "(" << currentPrefix << ", " << c << ")" << endl;
+
+            dict[dictSize].prefix = currentPrefix;
+            dict[dictSize].c = c;
+
+            dictSize++;
+            currentPrefix = 0;
+        }
+    }
+
+    // Si al terminar queda una frase encontrada pero no impresa.
+    if (currentPrefix != 0) {
+        cout << "(" << currentPrefix << ", FIN)" << endl;
+    }
+
+    delete[] dict;
+}
+
 int main() {
     string nombreArchivo;
     string textoOriginal;
@@ -127,6 +177,13 @@ int main() {
     catch (const char* mensaje) {
         cerr << mensaje << endl;
     }
+
+    char texto[] = "ABAABABA";
+
+    cout << "Texto original: " << texto << endl;
+    cout << endl;
+
+    compressLZ78(texto);
 
     return 0;
 }
