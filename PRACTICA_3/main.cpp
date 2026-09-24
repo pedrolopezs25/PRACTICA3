@@ -13,12 +13,15 @@ string leerArchivo(string nombreArchivo) {
 
     if (!archivo) {
         throw "Error en la lectura del archivo";
+        return 0;
     }
 
     while (archivo.get(caracter)) {
         texto = texto + caracter;
     }
-
+    if (nombreArchivo.length() == 0) {
+        throw "Error: el archivo esta vacio";
+    }
     archivo.close();
 
     return texto;
@@ -191,6 +194,22 @@ void decompressLZ78(Entry* entrada, int entradaSize,
     delete[] dict;
 }
 
+void encriptar(char* texto, int longitud, int n, unsigned char clave) {
+    for (int i = 0; i < longitud; i++) {
+        texto[i] = ((unsigned char)texto[i] << n) | ((unsigned char)texto[i] >> (8 - n));
+
+        texto[i] = texto[i] ^ clave;
+    }
+}
+
+void desencriptar(char* texto, int longitud, int n, unsigned char clave) {
+    for (int i = 0; i < longitud; i++) {
+        texto[i] = texto[i] ^ clave;
+
+        texto[i] = ((unsigned char)texto[i] >> n) | ((unsigned char)texto[i] << (8 - n));
+    }
+}
+
 int main() {
     string nombreArchivo;
     string textoOriginal;
@@ -256,5 +275,26 @@ int main() {
 
     delete[] comprimido;
     delete[] reconstruido;
+
+    char tex[] = "Hola";
+    int longitud = 4;
+    int n = 3;
+    unsigned char clave = 'K';
+
+    cout << "Original: " << tex << endl;
+
+    encriptar(tex, longitud, n, clave);
+
+    cout << "Encriptado: ";
+
+    for (int i = 0; i < longitud; i++) {
+        cout << (int)(unsigned char)tex[i] << " ";
+    }
+
+    cout << endl;
+
+    desencriptar(tex, longitud, n, clave);
+
+    cout << "Desencriptado: " << tex << endl;
     return 0;
 }
